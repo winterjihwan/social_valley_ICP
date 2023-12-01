@@ -1,0 +1,5 @@
+service : {
+  query_secretProvided: (text) -> (bool);
+  status_initialize: (text) -> (bool);
+  update_secretProvided: (text, bool) -> (bool);
+}

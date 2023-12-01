@@ -1,11 +1,16 @@
 {
   "canisters": {
-    "backend": {
-      "main": "canisters/backend/main.mo",
+    "purify": {
+      "main": "canisters/purify/main.mo",
+      "type": "motoko"
+    },
+    "authentication": {
+      "dependencies": ["purify"],
+      "main": "canisters/authentication/authentication.mo",
       "type": "motoko"
     },
     "assets": {
-      "dependencies": ["backend"],
+      "dependencies": ["purify"],
       "frontend": {
         "entrypoint": "dist/index.html"
       },

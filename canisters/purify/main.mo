@@ -9,7 +9,7 @@ import Principal "mo:base/Principal";
 import Int "mo:base/Int";
 
 
-actor SocialValley {
+actor Purify {
         // 타입 정의
         type Profile = {
           principal: Text;
@@ -180,5 +180,19 @@ actor SocialValley {
             };
 
             return [index.next_id, index.post_address, index.post_groupId, index.friend_tech, index.stars_address, index.stars_twitter_handle, index.stars_groupId];
+        };
+
+        // Authentication 헬퍼
+        public func query_principleToProfile (principal: Text) : async Text  {
+            let profile = principalToProfile.get(Principal.fromText(principal));
+
+            return switch (profile) {
+                case null {
+                    "";
+                };
+                case (?profile) {
+                    profile.principal;
+                };
+            };
         };
 };

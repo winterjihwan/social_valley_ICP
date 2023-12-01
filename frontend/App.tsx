@@ -1,4 +1,4 @@
-import React from "react"
+import React, { useState } from "react"
 import logo from "./assets/dfinity.svg"
 import { createClient } from "@connect2ic/core"
 import { defaultProviders } from "@connect2ic/core/providers"
@@ -7,34 +7,20 @@ import {
   ConnectDialog,
   Connect2ICProvider,
   useConnect,
+  useCanister,
 } from "@connect2ic/react"
 // import "@connect2ic/core/style.css"
-import * as backend from "../.dfx/local/canisters/backend"
-import { Backend } from "./components/Backend"
+import * as purify from "../.dfx/local/canisters/purify"
+import * as authentication from "../.dfx/local/canisters/authentication"
+import { Purify } from "./components/Purify"
 
-// II DEV
-import { AuthClient } from "@dfinity/auth-client"
-import { HttpAgent } from "@dfinity/agent"
+// Pages
+import { Authenticator } from "./components/Authenticator"
 
 function App() {
   // const { isConnected, principal } = useConnect()
-  const [isConnected, setIsConnected] = React.useState(false)
-  const [principal, setPrincipal] = React.useState(null)
 
-  const login = async () => {
-    const authClient = await AuthClient.create()
-    authClient.login({
-      identityProvider: `http://localhost:4943/?canisterId=rdmx6-jaaaa-aaaaa-aaadq-cai`,
-      onSuccess: () => {
-        console.log("Logged in")
-        setIsConnected(true)
-      },
-    })
-
-    const identity = await authClient.getIdentity()
-    setPrincipal(identity.getPrincipal().toString())
-    const agent = new HttpAgent({ identity })
-  }
+  const [TFAuthed, setTFAAuthed] = useState(false)
 
   return (
     <div>
@@ -49,27 +35,21 @@ function App() {
       </div> */}
       {/* <ConnectDialog /> */}
       <div>
-        <button onClick={login}>Login</button>
-
+        <Purify TFAuthed={TFAuthed} />
+      </div>
+      {!TFAuthed && (
         <div>
-          {isConnected && (
-            <div>
-              <div>Connected</div>
-              <div>{principal}</div>
-            </div>
-          )}
+          <Authenticator TFAuthed={TFAuthed} setTFAAuthed={setTFAAuthed} />
         </div>
-      </div>
-      <div>
-        <Backend />
-      </div>
+      )}
     </div>
   )
 }
 
 const client = createClient({
   canisters: {
-    backend,
+    purify,
+    authentication,
   },
   providers: defaultProviders,
   globalProviderConfig: {
