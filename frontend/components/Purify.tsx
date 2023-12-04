@@ -3,37 +3,33 @@ import React, { useEffect, useState } from "react"
 
 interface PurifyProps {
   TFAuthed: boolean
+  principal: String
 }
 
-const Purify = ({ TFAuthed }: PurifyProps) => {
+const Purify = ({ TFAuthed, principal }: PurifyProps) => {
   const [purify] = useCanister("purify")
   const [profile, setProfile] = useState(null)
   const [index, setIndex] = useState(null)
   const [comments, setComments] = useState(null)
-
-  const [createProfilePrincipal, setCreateProfilePrincipal] = useState(null)
-  const [createIndexPrincipal, setCreateIndexPrincipal] = useState(null)
-  const [queryProfilePrincipal, setQueryProfilePrincipal] = useState(null)
-  const [queryIndexPrincipal, setQueryIndexPrincipal] = useState(null)
-  const [ratePrincipal, setRatePrincipal] = useState(null)
   const [rateComment, setRateComment] = useState(null)
+  const [ratePrincipal, setRatePrincipal] = useState(null)
 
-  const createProfile = async (principalText: String) => {
+  const createProfile = async () => {
     console.log("Creating profile")
-    await purify.create_profile(principalText)
+    await purify.create_profile(principal)
     console.log("Profile created")
   }
 
-  const createIndex = async (principalText: String) => {
+  const createIndex = async () => {
     console.log("Creating index")
-    await purify.create_index(principalText)
+    await purify.create_index(principal)
     console.log("Index created")
   }
 
-  const queryProfile = async (principalText: String) => {
+  const queryProfile = async () => {
     console.log("Querying profile")
-    const profile = await purify.query_profile(principalText)
-    const comments = await purify.query_comments(principalText)
+    const profile = await purify.query_profile(principal)
+    const comments = await purify.query_comments(principal)
     console.log("Profile queried")
     console.log(profile)
     console.log(comments)
@@ -41,9 +37,9 @@ const Purify = ({ TFAuthed }: PurifyProps) => {
     setComments(comments)
   }
 
-  const queryIndex = async (principalText: String) => {
+  const queryIndex = async () => {
     console.log("Querying index")
-    const index = await purify.query_index(principalText)
+    const index = await purify.query_index(principal)
     console.log("Index queried")
     console.log(index)
     setIndex(index)
@@ -62,27 +58,13 @@ const Purify = ({ TFAuthed }: PurifyProps) => {
 
   return (
     <div>
-      Hello
+      Welcome to Purify
       <div>
         {TFAuthed && (
           <div>
-            <button onClick={() => createProfile(createProfilePrincipal)}>
-              Create Profile
-            </button>
-            <input
-              type="text"
-              placeholder="Principal"
-              onChange={(e) => setCreateProfilePrincipal(e.target.value)}
-            />
+            <button onClick={() => createProfile()}>Create Profile</button>
 
-            <button onClick={() => createIndex(createIndexPrincipal)}>
-              Create Index
-            </button>
-            <input
-              type="text"
-              placeholder="Principal"
-              onChange={(e) => setCreateIndexPrincipal(e.target.value)}
-            />
+            <button onClick={() => createIndex()}>Create Index</button>
 
             <button
               onClick={() =>
@@ -102,14 +84,7 @@ const Purify = ({ TFAuthed }: PurifyProps) => {
               onChange={(e) => setRatePrincipal(e.target.value)}
             />
 
-            <button onClick={() => queryProfile(queryProfilePrincipal)}>
-              Query Profile
-            </button>
-            <input
-              type="text"
-              placeholder="Principal"
-              onChange={(e) => setQueryProfilePrincipal(e.target.value)}
-            />
+            <button onClick={() => queryProfile()}>Query Profile</button>
 
             <div>
               {profile && (
@@ -130,14 +105,7 @@ const Purify = ({ TFAuthed }: PurifyProps) => {
               )}
             </div>
 
-            <button onClick={() => queryIndex(queryIndexPrincipal)}>
-              Query Index
-            </button>
-            <input
-              type="text"
-              placeholder="Principal"
-              onChange={(e) => setQueryIndexPrincipal(e.target.value)}
-            />
+            <button onClick={() => queryIndex()}>Query Index</button>
             <div>
               {index && (
                 <div>

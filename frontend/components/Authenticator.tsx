@@ -1,5 +1,5 @@
 // import { authenticator } from "otplib"
-import { authenticator } from "@otplib/preset-browser"
+import { authenticator as a } from "@otplib/preset-browser"
 import React, { useEffect, useState } from "react"
 import qrcode from "qrcode"
 import { useCanister } from "@connect2ic/react"
@@ -11,14 +11,22 @@ import { HttpAgent } from "@dfinity/agent"
 interface AuthenticatorProps {
   TFAuthed: boolean
   setTFAAuthed: (value: boolean) => void
+  principal: String
+  setPrincipal: any
 }
 
-const Authenticator = ({ TFAuthed, setTFAAuthed }: AuthenticatorProps) => {
+const Authenticator = ({
+  TFAuthed,
+  setTFAAuthed,
+  principal,
+  setPrincipal,
+}: AuthenticatorProps) => {
   const [qr, setQr] = useState(null)
   const [secret, setSecret] = useState(null)
   const [token, setToken] = useState("")
   const [authentication] = useCanister("authentication")
-  const [principal, setPrincipal] = useState("")
+  const [pInput, setPInput] = useState("")
+  const [TFRegistered, setTFRegistered] = useState(false)
 
   // II
   const [isConnected, setIsConnected] = React.useState(false)
@@ -36,31 +44,42 @@ const Authenticator = ({ TFAuthed, setTFAAuthed }: AuthenticatorProps) => {
 
     const identity = await authClient.getIdentity()
     setPrincipal(identity.getPrincipal().toString())
+    console.log("principal", identity.getPrincipal().toString())
     const agent = new HttpAgent({ identity })
+
+    const res = await authentication.query_secretProvided(
+      identity.getPrincipal().toString(),
+    )
+    if (res) {
+      setTFRegistered(true)
+    }
   }
 
   // Authenticator
-  const authenticatorInitialize = async (principal) => {
-    console.log("Query secret provided")
+  const authenticatorInitialize = async () => {
     const res = await authentication.query_secretProvided(principal)
     if (res) {
       console.log("Secret already provided", res)
-      // return
+      setTFRegistered(true)
+      return
     }
-    console.log("Secret not provided", res)
 
     console.log("Start google authenticator")
     const user = "username"
     const service = "Purify"
-    const secret = authenticator.generateSecret()
+    const secret = a.generateSecret()
+
+    // 시크릿 저장
     console.log("secret", secret)
     setSecret(secret)
+    const secretHashRes = await authentication.update_secretHash(
+      principal,
+      secret,
+    )
+    console.log("secretHash updated", secretHashRes)
 
-    const otpauth = authenticator.keyuri(user, service, secret)
-
-    const token = authenticator.generate(secret)
-    console.log("token", token)
-
+    // QR 생성
+    const otpauth = a.keyuri(user, service, secret)
     qrcode.toDataURL(otpauth, (err, imageUrl) => {
       if (err) {
         console.log("Error with QR")
@@ -70,59 +89,69 @@ const Authenticator = ({ TFAuthed, setTFAAuthed }: AuthenticatorProps) => {
       setQr(imageUrl)
     })
 
+    // Auth 모토코 업데이트
     let updateRes = await authentication.update_secretProvided(principal, true)
     console.log("secretProvided updated", updateRes)
+
+    setTFRegistered(true)
   }
 
-  const verifyAuthenticator = (token) => {
+  // 2FA 인증
+  const verifyAuthenticator = async (token) => {
     console.log("verifyAuthenticator")
+
+    const res = await authentication.query_secretProvided(principal)
+    if (!res) {
+      console.log("Secret not provided")
+      return
+    }
+
+    // Auth 모토코 쿼리
+    const secret = await authentication.query_secretHash(principal)
+
     try {
-      console.log(token)
-      const isValid = authenticator.verify({ token, secret })
-      console.log(isValid)
+      const isValid = a.verify({ token, secret })
+      console.log("AUTH RESULT", isValid)
       setTFAAuthed(isValid)
-    } catch (err) {
-      console.error(err)
+    } catch (e) {
+      console.error(e)
     }
   }
 
   return (
     <div>
       <div>
-        <button onClick={login}>Login</button>
-
+        {isConnected ? (
+          <div>
+            <div>User: {principal}</div>
+          </div>
+        ) : (
+          <button onClick={login}>Login</button>
+        )}
+      </div>
+      {isConnected && !TFRegistered && (
         <div>
-          {isConnected && (
-            <div>
-              <div>Connected</div>
-              <div>{principal}</div>
-            </div>
-          )}
+          You are not registered for 2FA. Please initialize your authenticator.
+          <button onClick={() => authenticatorInitialize()}>Initialize</button>
         </div>
-      </div>
-      <div>
-        <button onClick={() => authenticatorInitialize(principal)}>
-          Initialize
-        </button>
-        <input
-          type="text"
-          placeholder="Enter Principal"
-          value={principal}
-          onChange={(e) => setPrincipal(e.target.value)}
-        />
-      </div>
+      )}
       <div>
         <img src={qr} />
       </div>
-      <div>
-        <button onClick={() => verifyAuthenticator(token)}>Verify</button>
-      </div>
-      <input
-        type="number"
-        placeholder="Enter Token"
-        value={token}
-        onChange={(e) => setToken(e.target.value)}
-      />
+      {TFRegistered && (
+        <div>
+          Please verify your authenticator
+          <div>
+            <button onClick={() => verifyAuthenticator(token)}>Verify</button>
+          </div>
+          <input
+            type="number"
+            placeholder="Enter Token"
+            value={token}
+            onChange={(e) => setToken(e.target.value)}
+          />
+        </div>
+      )}
     </div>
   )
 }

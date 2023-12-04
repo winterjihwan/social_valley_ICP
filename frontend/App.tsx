@@ -21,6 +21,7 @@ function App() {
   // const { isConnected, principal } = useConnect()
 
   const [TFAuthed, setTFAAuthed] = useState(false)
+  const [principal, setPrincipal] = useState("")
 
   return (
     <div>
@@ -35,11 +36,16 @@ function App() {
       </div> */}
       {/* <ConnectDialog /> */}
       <div>
-        <Purify TFAuthed={TFAuthed} />
+        <Purify TFAuthed={TFAuthed} principal={principal} />
       </div>
       {!TFAuthed && (
         <div>
-          <Authenticator TFAuthed={TFAuthed} setTFAAuthed={setTFAAuthed} />
+          <Authenticator
+            TFAuthed={TFAuthed}
+            setTFAAuthed={setTFAAuthed}
+            principal={principal}
+            setPrincipal={setPrincipal}
+          />
         </div>
       )}
     </div>
